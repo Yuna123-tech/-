@@ -1,31 +1,373 @@
-
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>나의 국가유산 홍보대사</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>국가유산 발굴 게임</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap" rel="stylesheet">
     <style>
-      body {
-        font-family: 'Gowun Dodum', sans-serif;
-      }
+        body {
+            font-family: 'Noto Serif KR', serif;
+            background-color: #6D4C41;
+            color: #f5f5dc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            min-height: 100vh;
+            position: relative;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background-color: rgba(44, 62, 80, 0.7);
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            padding: 2.5rem;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: #d4b996;
+            text-shadow: 3px 3px #2c3e50;
+        }
+        .question-box {
+            background-color: #795548;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            line-height: 1.6;
+            font-weight: 500;
+            border: 2px solid #5d4037;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .option-btn {
+            background-color: #b78a63;
+            padding: 1.2rem;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s;
+            font-size: 1.1rem;
+            color: #fff;
+            font-weight: 600;
+            box-shadow: 0 4px #8c674a;
+        }
+        .option-btn:hover {
+            transform: translateY(-2px);
+            background-color: #a67c57;
+            box-shadow: 0 6px #785a40;
+        }
+        .option-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px #785a40;
+        }
+        .correct-answer {
+            background-color: #5c8c5c !important;
+            box-shadow: 0 4px #4a754a !important;
+        }
+        .incorrect-answer {
+            background-color: #c95c5c !important;
+            box-shadow: 0 4px #a84a4a !important;
+        }
+        #excavation-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+        .excavation-tile {
+            background-color: #5d4037;
+            background-image: repeating-linear-gradient(-45deg, rgba(0,0,0,.1) 0, rgba(0,0,0,.1) 5px, transparent 5px, transparent 10px);
+            background-size: cover;
+            border: 2px solid #8d6e63;
+            border-radius: 8px;
+            aspect-ratio: 1 / 1;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: rgba(255,255,255,0.3);
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        .excavation-tile:hover {
+            transform: translateY(-2px);
+        }
+        .excavation-tile.found {
+            background-color: #5c8c5c !important; /* 초록색 */
+            background-image: none;
+            cursor: default;
+            border: none;
+            animation: popOut 0.5s forwards;
+        }
+        .excavation-tile.opened {
+            background-color: #d2b48c !important; /* 연한 색 */
+            background-image: none;
+            cursor: default;
+            border: none;
+            animation: popOut 0.5s forwards;
+        }
+        @keyframes popOut {
+            from { transform: scale(1.05); opacity: 0.5; }
+            to { transform: scale(1); opacity: 1; }
+        }
+        .excavation-tile.found span, .excavation-tile.opened span {
+            display: none;
+        }
+        #message-box {
+            position: fixed;
+            top: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #d4b996;
+            color: #3e2723;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1.25rem;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 10;
+            transition: opacity 0.5s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+        }
+        #message-box.show {
+            opacity: 1;
+        }
+        .hide {
+            display: none;
+        }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.1.1/",
-    "react": "https://aistudiocdn.com/react@^19.1.1",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.16.0",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.1.1/"
-  }
-}
-</script>
 </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/index.tsx"></script>
-  </body>
+<body>
+    <div class="container">
+        <h1>국가유산 발굴 게임</h1>
+        <div id="game-stage">
+            <div class="question-box" id="question-text"></div>
+            <div class="options" id="options-container"></div>
+        </div>
+        <div id="excavation-stage" class="hide">
+            <h2>발굴 기회 획득!</h2>
+            <p class="mb-4">땅을 클릭하여 숨겨진 국가유산 조각을 발굴해 보세요! 한 번의 기회만 주어집니다.</p>
+            <div id="excavation-grid"></div>
+        </div>
+    </div>
+    <div id="message-box" class="hide"></div>
+
+    <script>
+        // Data Definitions
+        const questions = [
+            { question: "옛날 물건을 땅속에서 찾아내는 사람을 무엇이라고 부르나요?", options: ["고고학자", "역사가", "화가", "음악가"], answer: "고고학자" },
+            { question: "조선 시대에 한글을 만든 왕은 누구일까요?", options: ["세종대왕", "이순신", "김유신", "왕건"], answer: "세종대왕" },
+            { question: "우리나라의 가장 오래된 산성 중 하나로, 유네스코 세계유산인 이것은 무엇일까요?", options: ["수원화성", "남한산성", "고인돌", "팔만대장경"], answer: "남한산성" },
+            { question: "고려 시대의 대표적인 유물로, 맑고 푸른색을 띠는 도자기는 무엇일까요?", options: ["고려청자", "백자", "분청사기", "토기"], answer: "고려청자" },
+            { question: "옛날에 별을 관찰하던 건물로, 경주에 있는 것은 무엇일까요?", options: ["절", "첨성대", "탑", "궁궐"], answer: "첨성대" },
+            { question: "신라 시대에 경주에 있는, 불상을 모신 아주 오래된 석굴은 무엇일까요?", options: ["석굴암", "불국사", "다보탑", "석가탑"], answer: "석굴암" },
+            { question: "임진왜란 때 나라를 구한 장군은 누구일까요?", options: ["이순신", "강감찬", "김유신", "광개토대왕"], answer: "이순신" },
+            { question: "옛날 사람들이 땅을 파고 살았던 집은 무엇인가요?", options: ["초가집", "움집", "기와집", "아파트"], answer: "움집" },
+            { question: "유네스코 세계유산에 등록된 우리나라의 궁궐은 무엇인가요?", options: ["창덕궁", "경복궁", "덕수궁", "경희궁"], answer: "창덕궁" },
+            { question: "조선 시대에 한양(지금의 서울)을 둘러싸고 있던 성은 무엇일까요?", options: ["한양도성", "수원화성", "고인돌", "북한산성"], answer: "한양도성" },
+            { question: "옛날에 나라의 역사를 기록한 책을 무엇이라고 부르나요?", options: ["실록", "만화책", "일기장", "동화책"], answer: "실록" },
+            { question: "고구려의 왕으로, 넓은 영토를 정복한 왕은 누구일까요?", options: ["광개토대왕", "세종대왕", "이순신", "김수로왕"], answer: "광개토대왕" },
+            { question: "옛날에 쌀을 빻아 가루로 만들 때 쓰던 도구는 무엇일까요?", options: ["맷돌", "절구", "가마솥", "호미"], answer: "맷돌" },
+            { question: "옛날 사람들이 몸을 따뜻하게 하려고 사용했던 난방 방식은 무엇일까요?", options: ["온돌", "난로", "에어컨", "히터"], answer: "온돌" },
+            { question: "백제 시대의 수도로, 지금의 충남 공주와 부여였던 곳은 어디인가요?", options: ["부여", "경주", "서울", "개성"], answer: "부여" },
+            { question: "고려 시대에 외적을 막기 위해 만든, 불상과 그림이 새겨진 목판은 무엇일까요?", options: ["팔만대장경", "고려청자", "불국사", "석굴암"], answer: "팔만대장경" },
+            { question: "통일 신라 시대의 건축물로, 신라의 불교 미술을 대표하는 사찰은 무엇일까요?", options: ["불국사", "해인사", "탑골공원", "석굴암"], answer: "불국사" },
+            { question: "조선 시대에 과학 기술 발전을 위해 세종대왕이 만든 기관은 무엇일까요?", options: ["집현전", "홍문관", "성균관", "규장각"], answer: "집현전" },
+            { question: "옛날에 곡식을 담거나 음식을 만들 때 사용했던 그릇으로, 흙으로 구워 만든 것은 무엇일까요?", options: ["토기", "유리병", "냄비", "접시"], answer: "토기" },
+            { question: "삼국 시대에 만든, 돌을 깎아 만든 무덤은 무엇인가요?", options: ["석탑", "고인돌", "돌무지", "벽화"], answer: "고인돌" },
+            { question: "옛날 사람들이 글씨나 그림을 썼던 재료 중, 나무껍질로 만든 종이는 무엇일까요?", options: ["종이", "비단", "한지", "파피루스"], answer: "한지" },
+            { question: "우리나라에서 가장 오래된 그림 중에, 동굴 벽에 그려진 그림은 무엇일까요?", options: ["벽화", "낙서", "지도", "만화"], answer: "벽화" },
+            { question: "고려 시대에 만들어진, 우리나라에서 가장 오래된 금속활자본은 무엇일까요?", options: ["직지심체요절", "삼국유사", "동의보감", "조선왕조실록"], answer: "직지심체요절" },
+            { question: "옛날에 신분증 대신 사용했던, 둥글고 납작한 돌이나 나무 조각은 무엇일까요?", options: ["패찰", "명패", "인장", "부적"], answer: "패찰" },
+            { question: "신라 시대에 만들어진, 돌로 만든 가장 오래된 불상은 무엇일까요?", options: ["불국사 석가탑", "석굴암 본존불", "다보탑", "미륵사지 석탑"], answer: "석굴암 본존불" },
+            { question: "백제 시대에 만든, 연꽃이 그려진 아름다운 탑은 무엇일까요?", options: ["정림사지오층석탑", "미륵사지석탑", "불국사", "첨성대"], answer: "정림사지오층석탑" },
+            { question: "임진왜란 때 이순신 장군이 만든 배는 무엇일까요?", options: ["거북선", "판옥선", "배", "전함"], answer: "거북선" },
+            { question: "조선 시대에 만든, 비가 얼마나 왔는지 재는 도구는 무엇일까요?", options: ["측우기", "나침반", "자격루", "앙부일구"], answer: "측우기" },
+            { question: "신라의 유명한 화랑으로, 삼국 통일에 큰 역할을 한 사람은 누구일까요?", options: ["김유신", "강감찬", "이순신", "세종대왕"], answer: "김유신" },
+            { question: "고려 시대의 수도였던 곳으로, 지금의 개성에 해당하는 곳은 어디인가요?", options: ["개성", "한양", "경주", "김해"], answer: "개성" }
+        ];
+
+        // Game State Variables
+        let currentQuestionIndex = 0;
+        let excavationOpportunityUsed = false;
+        let tileStates = Array(16).fill('closed'); 
+        let artifactTileIndices = [];
+        let totalArtifactsFound = 0;
+        const totalArtifacts = 3;
+
+        // DOM Elements
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const gameStage = document.getElementById('game-stage');
+        const excavationStage = document.getElementById('excavation-stage');
+        const excavationGrid = document.getElementById('excavation-grid');
+        const messageBox = document.getElementById('message-box');
+        
+        // Helper function to shuffle an array (Fisher-Yates algorithm)
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+        
+        // --- Game Logic Functions ---
+        
+        function startGame() {
+            shuffleArray(questions);
+            placeArtifacts();
+            showQuestion();
+        }
+
+        function placeArtifacts() {
+            const allIndices = Array.from({length: 16}, (_, i) => i);
+            shuffleArray(allIndices);
+            artifactTileIndices = allIndices.slice(0, totalArtifacts);
+        }
+
+        function showQuestion() {
+            if (totalArtifactsFound >= totalArtifacts) {
+                showMessage(`축하합니다! 발굴을 성공했습니다!`, "end");
+                return;
+            }
+            
+            if (currentQuestionIndex >= questions.length) {
+                currentQuestionIndex = 0;
+                shuffleArray(questions);
+            }
+
+            const currentQ = questions[currentQuestionIndex];
+            questionText.textContent = currentQ.question;
+            optionsContainer.innerHTML = '';
+            gameStage.classList.remove('hide');
+            excavationStage.classList.add('hide');
+            excavationOpportunityUsed = false;
+
+            const shuffledOptions = shuffleArray(currentQ.options.slice());
+            
+            shuffledOptions.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('option-btn');
+                button.addEventListener('click', () => handleAnswer(option, currentQ.answer));
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function handleAnswer(selected, correct) {
+            const options = optionsContainer.querySelectorAll('.option-btn');
+            options.forEach(btn => {
+                btn.disabled = true;
+                if (btn.textContent === correct) {
+                    btn.classList.add('correct-answer');
+                } else if (btn.textContent === selected) {
+                    btn.classList.add('incorrect-answer');
+                }
+            });
+
+            if (selected === correct) {
+                showMessage("정답입니다! 발굴 기회를 획득했어요!", "success");
+            } else {
+                showMessage(`아쉽지만 틀렸어요. 정답은 '${correct}' 입니다.`, "fail");
+            }
+        }
+
+        function showMessage(msg, type) {
+            messageBox.textContent = msg;
+            messageBox.classList.remove('hide');
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+                setTimeout(() => {
+                    messageBox.classList.add('hide');
+                    if (type === "success") {
+                        gameStage.classList.add('hide');
+                        excavationStage.classList.remove('hide');
+                        setupExcavationGrid();
+                    } else if (type === "fail") {
+                        currentQuestionIndex++;
+                        showQuestion();
+                    } else if (type === "excavation_result") {
+                        currentQuestionIndex++;
+                        showQuestion();
+                    } else if (type === "end") {
+                        // 게임 종료 후 아무 동작도 하지 않음
+                    }
+                }, 500);
+            }, 2000);
+        }
+
+        function setupExcavationGrid() {
+            excavationGrid.innerHTML = '';
+            
+            for (let i = 0; i < 16; i++) {
+                const tile = document.createElement('div');
+                tile.classList.add('excavation-tile');
+                tile.innerHTML = `<span>?</span>`;
+                
+                if (tileStates[i] === 'opened') {
+                    tile.classList.add('opened');
+                    tile.removeEventListener('click', handleExcavation);
+                } else if (tileStates[i] === 'found') {
+                    tile.classList.add('found');
+                    tile.removeEventListener('click', handleExcavation);
+                } else {
+                    tile.addEventListener('click', handleExcavation);
+                }
+                
+                excavationGrid.appendChild(tile);
+            }
+        }
+
+        function handleExcavation(e) {
+            const tile = e.target.closest('.excavation-tile');
+            const tileIndex = Array.from(excavationGrid.children).indexOf(tile);
+
+            if (!tile || excavationOpportunityUsed) return;
+            
+            excavationOpportunityUsed = true;
+            
+            const tiles = excavationGrid.querySelectorAll('.excavation-tile');
+            tiles.forEach(t => t.removeEventListener('click', handleExcavation));
+
+            if (artifactTileIndices.includes(tileIndex)) {
+                tile.classList.add('found');
+                tileStates[tileIndex] = 'found';
+                totalArtifactsFound++;
+                showMessage("유물을 찾았습니다! 축하합니다!", "excavation_result");
+            } else {
+                tile.classList.add('opened');
+                tileStates[tileIndex] = 'opened';
+                showMessage("아쉽네요... 다음 기회에!", "excavation_result");
+            }
+            
+            setTimeout(() => {
+                currentQuestionIndex++;
+                showQuestion();
+            }, 2500);
+        }
+
+        window.onload = startGame;
+    </script>
+</body>
 </html>

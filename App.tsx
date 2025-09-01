@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Plan, View } from './types';
 import Header from './components/Header';
 import MainMenu from './components/MainMenu';
@@ -9,7 +9,33 @@ import GalleryView from './components/GalleryView';
 
 const App: React.FC = () => {
   const [view, setView] = useState<View>(View.MainMenu);
-  const [plans, setPlans] = useState<Plan[]>([]);
+  
+  const [plans, setPlans] = useState<Plan[]>(() => {
+    try {
+      const savedPlans = localStorage.getItem('my-heritage-plans');
+      if (savedPlans) {
+        // 로컬 스토리지에서 불러온 데이터의 날짜 형식을 Date 객체로 변환합니다.
+        const parsedPlans = JSON.parse(savedPlans) as (Omit<Plan, 'createdAt'> & { createdAt: string })[];
+        return parsedPlans.map(plan => ({
+          ...plan,
+          createdAt: new Date(plan.createdAt),
+        }));
+      }
+    } catch (error) {
+      console.error("localStorage에서 계획을 불러오는 데 실패했습니다.", error);
+    }
+    return [];
+  });
+
+  // plans 상태가 변경될 때마다 localStorage에 자동으로 저장합니다.
+  useEffect(() => {
+    try {
+      localStorage.setItem('my-heritage-plans', JSON.stringify(plans));
+    } catch (error) {
+      console.error("localStorage에 계획을 저장하는 데 실패했습니다.", error);
+    }
+  }, [plans]);
+
 
   const addPlan = useCallback((plan: Omit<Plan, 'id' | 'createdAt'>) => {
     const newPlan: Plan = {

@@ -18,49 +18,73 @@ const DrawingView: React.FC<DrawingViewProps> = ({ onSave, onBack }) => {
   const [color, setColor] = useState(COLORS[0]);
   const [brushSize, setBrushSize] = useState(5);
 
+  // This effect sets up the canvas and handles resizing.
+  // It runs only once on mount.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Adjust for high-DPI screens
-    const scale = window.devicePixelRatio;
-    canvas.width = canvas.offsetWidth * scale;
-    canvas.height = canvas.offsetHeight * scale;
+    const setupCanvas = () => {
+      const scale = window.devicePixelRatio;
+      canvas.width = canvas.offsetWidth * scale;
+      canvas.height = canvas.offsetHeight * scale;
 
-    const context = canvas.getContext("2d");
-    if (!context) return;
+      const context = canvas.getContext("2d");
+      if (!context) return;
+      
+      context.scale(scale, scale);
+      context.lineCap = "round";
+      // After context is reset, apply current styles
+      context.strokeStyle = color;
+      context.lineWidth = brushSize;
+      contextRef.current = context;
+    };
     
-    context.scale(scale, scale);
-    context.lineCap = "round";
-    context.strokeStyle = color;
-    context.lineWidth = brushSize;
-    contextRef.current = context;
-  }, []);
+    setupCanvas();
+    window.addEventListener('resize', setupCanvas);
+    
+    return () => {
+      window.removeEventListener('resize', setupCanvas);
+    };
+  }, []); // The empty dependency array is intentional. Style updates are handled below.
 
-   useEffect(() => {
+  // Update stroke style when color changes
+  useEffect(() => {
     if (contextRef.current) {
       contextRef.current.strokeStyle = color;
     }
   }, [color]);
 
+  // Update line width when brush size changes
   useEffect(() => {
     if (contextRef.current) {
       contextRef.current.lineWidth = brushSize;
     }
   }, [brushSize]);
 
+  const getEventPosition = useCallback((event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+
+    const rect = canvas.getBoundingClientRect();
+
+    const clientX = 'touches' in event.nativeEvent ? event.nativeEvent.touches[0].clientX : event.nativeEvent.clientX;
+    const clientY = 'touches' in event.nativeEvent ? event.nativeEvent.touches[0].clientY : event.nativeEvent.clientY;
+    
+    return {
+      x: clientX - rect.left,
+      y: clientY - rect.top,
+    };
+  }, []);
 
   const startDrawing = useCallback((event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas || !contextRef.current) return;
-    
     const pos = getEventPosition(event);
-    if (!pos) return;
-
+    if (!pos || !contextRef.current) return;
+    
     contextRef.current.beginPath();
     contextRef.current.moveTo(pos.x, pos.y);
     setIsDrawing(true);
-  }, []);
+  }, [getEventPosition]);
 
   const finishDrawing = useCallback(() => {
     if (!contextRef.current) return;
@@ -70,36 +94,23 @@ const DrawingView: React.FC<DrawingViewProps> = ({ onSave, onBack }) => {
 
   const draw = useCallback((event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
     if (!isDrawing || !contextRef.current) return;
+    
+    // Prevent default actions like scrolling while drawing on touch devices
+    event.preventDefault();
 
     const pos = getEventPosition(event);
     if (!pos) return;
     
     contextRef.current.lineTo(pos.x, pos.y);
     contextRef.current.stroke();
-  }, [isDrawing]);
-
-  const getEventPosition = (event: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-
-    const rect = canvas.getBoundingClientRect();
-    if ('touches' in event.nativeEvent) {
-      return {
-        x: event.nativeEvent.touches[0].clientX - rect.left,
-        y: event.nativeEvent.touches[0].clientY - rect.top
-      };
-    }
-    return {
-      x: event.nativeEvent.offsetX,
-      y: event.nativeEvent.offsetY,
-    };
-  };
+  }, [isDrawing, getEventPosition]);
 
   const clearCanvas = () => {
     const canvas = canvasRef.current;
     const context = contextRef.current;
     if (canvas && context) {
-      context.clearRect(0, 0, canvas.width, canvas.height);
+      // Clear the visible area of the canvas, respecting the scale
+      context.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
     }
   };
 

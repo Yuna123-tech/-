@@ -270,7 +270,7 @@
             <div id="artifact-count" class="info-item">찾은 유물: 0 / 3</div>
             <div id="global-timer" class="info-item">남은 시간: 03:30</div>
         </div>
-        <div id="game-stage">
+        <div id="game-stage" class="hide"> <!-- 초기에는 게임 스테이지를 숨김 -->
             <div class="question-box" id="question-text"></div>
             <div class="options" id="options-container"></div>
         </div>
@@ -293,8 +293,8 @@
     <div id="message-box" class="hide"></div>
 
     <!-- Game Tutorial Modal -->
-    <!-- 초기에는 숨겨져 있다가 JS에서 보이도록 제어 -->
-    <div id="tutorial-modal" class="modal" style="display: none;"> 
+    <!-- 초기에는 JS로 'display: flex'를 적용하여 보이도록 합니다. -->
+    <div id="tutorial-modal" class="modal"> 
         <div class="modal-content">
             <h3>국가유산 발굴 게임 방법</h3>
             <p id="tutorial-q-count"></p>
@@ -409,7 +409,7 @@
             globalTimerDisplay.textContent = `남은 시간: ${formatTime(globalGameTimeLeft)}`;
 
             endGameScreen.classList.add('hide');
-            gameStage.classList.remove('hide');
+            gameStage.classList.remove('hide'); // 게임 시작 시 게임 스테이지 표시
             excavationStage.classList.add('hide');
             
             shuffleArray(questions);
@@ -562,43 +562,4 @@
             excavationOpportunityUsed = true;
             
             const tiles = excavationGrid.querySelectorAll('.excavation-tile');
-            tiles.forEach(t => t.removeEventListener('click', handleExcavation)); // 발굴 기회 사용 후 모든 타일의 이벤트 리스너 제거
-
-            if (artifactTileIndices.includes(tileIndex)) {
-                tile.classList.add('found');
-                tileStates[tileIndex] = 'found';
-                totalArtifactsFound++;
-                showMessage("유물을 찾았습니다! 축하합니다!", "excavation_result");
-            } else {
-                tile.classList.add('opened');
-                tileStates[tileIndex] = 'opened';
-                showMessage("아쉽네요... 다음 기회에!", "excavation_result");
-            }
-            artifactCountDisplay.textContent = `찾은 유물: ${totalArtifactsFound} / ${totalArtifacts}`;
-            
-            // 메시지 표시 후 다음 질문으로 넘어가도록 지연
-            setTimeout(() => {
-                currentQuestionIndex++;
-                showQuestion();
-            }, 2500); 
-        }
-
-        function endGame(result) {
-            gameStage.classList.add('hide');
-            excavationStage.classList.add('hide');
-            endGameScreen.classList.remove('hide');
-            clearInterval(excavationTimerInterval); // 혹시 모를 발굴 타이머 중지
-            clearInterval(globalGameTimerInterval); // 전체 게임 타이머 중지
-            tutorialModal.style.display = 'none'; // 게임 종료 시 튜토리얼 모달 숨김
-
-            if (result === "win") {
-                endGameMessage.textContent = "🥳 축하합니다! 모든 유물을 성공적으로 발굴했습니다! 🎉";
-            } else if (result === "time_over") {
-                endGameMessage.textContent = "시간 초과! 아쉽지만 다음 기회에 다시 도전해보세요!";
-            } else { // result === "lose" (문제 다 풀고도 유물 못 찾은 경우)
-                endGameMessage.textContent = "모든 퀴즈를 풀었지만, 유물을 모두 발굴하지 못했어요. 다음 기회에 다시 도전해보세요!";
-            }
-            finalArtifactCount.textContent = `최종 발견 유물: ${totalArtifactsFound}개`;
-        }
-
-        // Event Listeners
+            tiles.forEach(t => t.removeEventListener('click', handleExcavation)); // 발굴 기회 사용 후

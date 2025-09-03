@@ -199,6 +199,8 @@
             border-radius: 16px;
             text-align: center;
             max-width: 700px;
+             margin-left: auto;
+    margin-right: auto;
         }
         #start-screen h2 {
             font-size: 2.2rem;
@@ -227,6 +229,85 @@
             background-color: #a67c57;
             box-shadow: 0 6px #785a40;
         }
+                /* ... (기존 CSS 코드들) ... */
+
+        /* --- 이 아래에 다음 코드를 통째로 복사해서 붙여넣으세요 --- */
+        @media (max-width: 768px) { /* 태블릿 및 모바일 */
+            body {
+                padding: 1rem; /* 전체 패딩 줄이기 */
+            }
+            .container {
+                padding: 1.5rem; /* 컨테이너 내부 패딩 줄이기 */
+                max-width: 95%; /* 모바일에서 더 넓게 사용 */
+            }
+            h1 {
+                font-size: 2rem; /* 제목 폰트 크기 줄이기 */
+                margin-bottom: 1rem;
+            }
+            #start-screen h2 {
+                font-size: 1.8rem;
+            }
+            #start-screen p {
+                font-size: 1rem;
+            }
+            #start-button {
+                padding: 1rem 2rem;
+                font-size: 1.2rem;
+            }
+            .question-box {
+                font-size: 1.2rem; /* 질문 폰트 크기 줄이기 */
+                padding: 1rem;
+                margin-bottom: 1.5rem;
+            }
+            .options {
+                grid-template-columns: 1fr; /* 모바일에서 버튼을 한 줄에 하나씩 정렬 */
+                gap: 0.8rem;
+            }
+            .option-btn {
+                padding: 0.9rem;
+                font-size: 1rem;
+            }
+            #excavation-grid {
+                grid-template-columns: repeat(3, 1fr); /* 발굴 그리드 컬럼 수 조절 (선택 사항, 4개 유지해도 괜찮을 수 있음) */
+                gap: 0.3rem;
+            }
+            .excavation-tile {
+                font-size: 1.2rem;
+            }
+            #message-box {
+                padding: 0.8rem 1.5rem;
+                font-size: 1rem;
+            }
+            #timer {
+                font-size: 1.5rem;
+            }
+            #game-over h2 {
+                font-size: 1.5rem;
+            }
+            #final-message, #game-over p {
+                font-size: 1rem;
+            }
+            .link-btn {
+                padding: 0.7rem 1.2rem;
+                font-size: 0.9rem;
+                display: block; /* 모바일에서 버튼을 세로로 나열 */
+                margin: 0.5rem auto; /* 가운데 정렬 */
+            }
+        }
+
+        @media (max-width: 480px) { /* 더 작은 모바일 화면 */
+            h1 {
+                font-size: 1.8rem;
+            }
+            #start-screen h2 {
+                font-size: 1.5rem;
+            }
+            .question-box {
+                font-size: 1rem;
+            }
+            /* 필요에 따라 더 미세한 조정 */
+        }
+        /* --- 여기까지 복사해서 붙여넣으시면 됩니다 --- */
     </style>
 </head>
 <body>

@@ -154,22 +154,136 @@
         .hide {
             display: none;
         }
+
+        /* Modal Styles */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        .modal-content {
+            background-color: #d4b996;
+            color: #3e2723;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        .modal-content h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #6D4C41;
+        }
+        .modal-content p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+        .modal-content button {
+            background-color: #795548;
+            color: #fff;
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        .modal-content button:hover {
+            background-color: #5d4037;
+        }
+        #artifact-count {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #d4b996;
+            margin-bottom: 1rem;
+        }
+        #timer {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #c95c5c;
+            margin-bottom: 1rem;
+        }
+        .end-screen {
+            background-color: #795548;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px solid #5d4037;
+            margin-top: 2rem;
+        }
+        .end-screen h2 {
+            font-size: 2rem;
+            color: #d4b996;
+            margin-bottom: 1rem;
+        }
+        .end-screen p {
+            font-size: 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        .end-screen .link-btn {
+            display: block;
+            background-color: #b78a63;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            color: #fff;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background-color 0.2s, transform 0.2s;
+        }
+        .end-screen .link-btn:hover {
+            background-color: #a67c57;
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>국가유산 발굴 게임</h1>
+        <div id="artifact-count">찾은 유물: 0 / 3</div>
         <div id="game-stage">
             <div class="question-box" id="question-text"></div>
             <div class="options" id="options-container"></div>
         </div>
         <div id="excavation-stage" class="hide">
             <h2>발굴 기회 획득!</h2>
-            <p class="mb-4">땅을 클릭하여 숨겨진 국가유산 조각을 발굴해 보세요! 한 번의 기회만 주어집니다.</p>
+            <p class="mb-2">땅을 클릭하여 숨겨진 국가유산 조각을 발굴해 보세요!</p>
+            <p class="mb-4">발굴 기회는 단 한 번이며, 제한 시간 10초 안에 선택해야 합니다.</p>
+            <div id="timer">남은 시간: 10초</div>
             <div id="excavation-grid"></div>
+        </div>
+        <div id="end-game-screen" class="hide end-screen">
+            <h2 id="end-game-message"></h2>
+            <p id="final-artifact-count"></p>
+            <p>이렇게 발굴된 다양한 국가유산들은 우리의 소중한 보물입니다. 더 많은 정보를 찾아보세요!</p>
+            <a href="https://www.heritage.go.kr/heri/idx/index.do" target="_blank" class="link-btn">국가유산청 홈페이지 바로가기</a>
+            <a href="https://www.khs.go.kr/culVisit/follow_main.html" target="_blank" class="link-btn">우리 지역 국가유산 탐색하기</a>
+            <button id="restart-game-btn" class="option-btn mt-4">게임 다시 시작</button>
         </div>
     </div>
     <div id="message-box" class="hide"></div>
+
+    <!-- Game Tutorial Modal -->
+    <div id="tutorial-modal" class="modal">
+        <div class="modal-content">
+            <h3>국가유산 발굴 게임 방법</h3>
+            <p>역사 퀴즈를 맞히고 발굴 기회를 얻으세요!</p>
+            <p>퀴즈 정답 시 획득한 발굴 기회로 땅속에 숨겨진 유물 조각을 찾아냅니다.</p>
+            <p>제한 시간 10초 안에 땅을 클릭하여 유물을 발굴하세요!</p>
+            <p>총 3개의 유물 조각을 모두 찾으면 게임 승리!</p>
+            <button id="start-game-btn">게임 시작!</button>
+        </div>
+    </div>
 
     <script>
         // Data Definitions
@@ -212,7 +326,9 @@
         let tileStates = Array(16).fill('closed'); 
         let artifactTileIndices = [];
         let totalArtifactsFound = 0;
-        const totalArtifacts = 3;
+        const totalArtifacts = 3; // 목표 유물 개수
+        let timerInterval;
+        let timeLeft = 10;
 
         // DOM Elements
         const questionText = document.getElementById('question-text');
@@ -221,6 +337,14 @@
         const excavationStage = document.getElementById('excavation-stage');
         const excavationGrid = document.getElementById('excavation-grid');
         const messageBox = document.getElementById('message-box');
+        const artifactCountDisplay = document.getElementById('artifact-count');
+        const timerDisplay = document.getElementById('timer');
+        const tutorialModal = document.getElementById('tutorial-modal');
+        const startGameButton = document.getElementById('start-game-btn');
+        const endGameScreen = document.getElementById('end-game-screen');
+        const endGameMessage = document.getElementById('end-game-message');
+        const finalArtifactCount = document.getElementById('final-artifact-count');
+        const restartGameButton = document.getElementById('restart-game-btn');
         
         // Helper function to shuffle an array (Fisher-Yates algorithm)
         function shuffleArray(array) {
@@ -233,7 +357,16 @@
         
         // --- Game Logic Functions ---
         
-        function startGame() {
+        function initializeGame() {
+            currentQuestionIndex = 0;
+            excavationOpportunityUsed = false;
+            tileStates = Array(16).fill('closed'); 
+            artifactTileIndices = [];
+            totalArtifactsFound = 0;
+            artifactCountDisplay.textContent = `찾은 유물: ${totalArtifactsFound} / ${totalArtifacts}`;
+            endGameScreen.classList.add('hide');
+            gameStage.classList.remove('hide');
+            excavationStage.classList.add('hide');
             shuffleArray(questions);
             placeArtifacts();
             showQuestion();
@@ -247,13 +380,14 @@
 
         function showQuestion() {
             if (totalArtifactsFound >= totalArtifacts) {
-                showMessage(`축하합니다! 발굴을 성공했습니다!`, "end");
+                endGame("win");
                 return;
             }
             
             if (currentQuestionIndex >= questions.length) {
-                currentQuestionIndex = 0;
-                shuffleArray(questions);
+                // 모든 문제를 다 풀었지만 유물을 다 못 찾은 경우
+                endGame("lose");
+                return;
             }
 
             const currentQ = questions[currentQuestionIndex];
@@ -272,6 +406,7 @@
                 button.addEventListener('click', () => handleAnswer(option, currentQ.answer));
                 optionsContainer.appendChild(button);
             });
+            artifactCountDisplay.textContent = `찾은 유물: ${totalArtifactsFound} / ${totalArtifacts}`;
         }
 
         function handleAnswer(selected, correct) {
@@ -303,6 +438,7 @@
                     if (type === "success") {
                         gameStage.classList.add('hide');
                         excavationStage.classList.remove('hide');
+                        startExcavationTimer(); // 발굴 타이머 시작
                         setupExcavationGrid();
                     } else if (type === "fail") {
                         currentQuestionIndex++;
@@ -310,11 +446,31 @@
                     } else if (type === "excavation_result") {
                         currentQuestionIndex++;
                         showQuestion();
-                    } else if (type === "end") {
-                        // 게임 종료 후 아무 동작도 하지 않음
                     }
                 }, 500);
             }, 2000);
+        }
+
+        function startExcavationTimer() {
+            clearInterval(timerInterval);
+            timeLeft = 10;
+            timerDisplay.textContent = `남은 시간: ${timeLeft}초`;
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDisplay.textContent = `남은 시간: ${timeLeft}초`;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    handleExcavationTimeout();
+                }
+            }, 1000);
+        }
+
+        function handleExcavationTimeout() {
+            if (excavationOpportunityUsed) return; // 이미 발굴했으면 무시
+            excavationOpportunityUsed = true;
+            const tiles = excavationGrid.querySelectorAll('.excavation-tile');
+            tiles.forEach(t => t.removeEventListener('click', handleExcavation));
+            showMessage("시간 초과! 발굴 기회를 놓쳤어요.", "excavation_result");
         }
 
         function setupExcavationGrid() {
@@ -345,6 +501,7 @@
 
             if (!tile || excavationOpportunityUsed) return;
             
+            clearInterval(timerInterval); // 발굴하면 타이머 중지
             excavationOpportunityUsed = true;
             
             const tiles = excavationGrid.querySelectorAll('.excavation-tile');
@@ -360,6 +517,7 @@
                 tileStates[tileIndex] = 'opened';
                 showMessage("아쉽네요... 다음 기회에!", "excavation_result");
             }
+            artifactCountDisplay.textContent = `찾은 유물: ${totalArtifactsFound} / ${totalArtifacts}`;
             
             setTimeout(() => {
                 currentQuestionIndex++;
@@ -367,7 +525,34 @@
             }, 2500);
         }
 
-        window.onload = startGame;
+        function endGame(result) {
+            gameStage.classList.add('hide');
+            excavationStage.classList.add('hide');
+            endGameScreen.classList.remove('hide');
+            clearInterval(timerInterval);
+
+            if (result === "win") {
+                endGameMessage.textContent = "🥳 축하합니다! 모든 유물을 성공적으로 발굴했습니다! 🎉";
+            } else {
+                endGameMessage.textContent = "아쉽지만, 다음 기회에 다시 도전해보세요!";
+            }
+            finalArtifactCount.textContent = `최종 발견 유물: ${totalArtifactsFound}개`;
+        }
+
+        // Event Listeners
+        startGameButton.addEventListener('click', () => {
+            tutorialModal.classList.add('hide');
+            initializeGame();
+        });
+
+        restartGameButton.addEventListener('click', () => {
+            initializeGame();
+        });
+
+        // Show tutorial modal on initial load
+        window.onload = () => {
+            tutorialModal.classList.remove('hide');
+        };
     </script>
 </body>
 </html>
